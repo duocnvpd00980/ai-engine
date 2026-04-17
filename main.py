@@ -8,10 +8,12 @@ if BASE_DIR not in sys.path:
 
 from fastapi import FastAPI
 from api.v1.endpoints import banner
+from api.v1.endpoints import test_canvas
+from api.v1.endpoints import test_template
+from api.v1.endpoints import test_content
 from services.image_service import ImageGenerationService
 import uvicorn
 import logging
-from api.v1.endpoints import test_canvas
 
 
 logging.basicConfig(
@@ -38,6 +40,8 @@ async def startup_event():
 # =========================
 app.include_router(banner.router, prefix="/v1")
 app.include_router(test_canvas.router, prefix="/v1")
+app.include_router(test_template.router, prefix="/v1")
+app.include_router(test_content.router, prefix="/v1")
 
 # =========================
 # TEST IMAGE ENDPOINT

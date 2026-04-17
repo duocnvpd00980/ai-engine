@@ -2,6 +2,11 @@ from PIL import Image, ImageDraw, ImageFont, ImageColor
 import requests
 from io import BytesIO
 import re
+import os
+from PIL import ImageFont
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+FONT_DIR = os.path.join(BASE_DIR, "assets", "fonts", "roboto")
 
 
 # --- HELPER: COLOR ---
@@ -29,11 +34,26 @@ def get_color(color_str):
 # --- FONT ---
 def load_font(size, bold=False):
     try:
-        font_path = "arialbd.ttf" if bold else "arial.ttf"
-        return ImageFont.truetype(font_path, int(size))
-    except:
-        return ImageFont.load_default()
+        font_file = "Roboto-Bold.ttf" if bold else "Roboto-Medium.ttf"
+        font_path = os.path.join(FONT_DIR, font_file)
 
+        print("━━━━━━━━ FONT DEBUG ━━━━━━━━")
+        print("📁 FONT_DIR:", FONT_DIR)
+        print("📄 FONT FILE:", font_file)
+        print("📌 FULL PATH:", font_path)
+        print("✔ EXISTS:", os.path.exists(font_path))
+
+        font = ImageFont.truetype(font_path, int(size))
+
+        print("✅ FONT LOADED OK:", font)
+
+        return font
+
+    except Exception as e:
+        print("❌ FONT ERROR:", e)
+        print("⚠️ FALLBACK TO DEFAULT FONT")
+
+        return ImageFont.load_default()
 
 # --- IMAGE ---
 def load_image(src, w=None, h=None):
@@ -129,7 +149,7 @@ def render_canvas(template: dict, data: dict):
             img = load_image(src, img_w, img_h)
 
             if img:
-                canvas.paste(img, (x, y))
+                canvas.paste(img, (x, y), img)
             else:
                 print(f"⚠️ IMAGE NOT LOADED: {src}")
 
