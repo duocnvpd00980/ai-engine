@@ -1,109 +1,94 @@
 import base64
 import cairosvg
 import logging
+import time
 
 from render.svg_renderer import render_svg
-from services.pollinations_service import PollinationsService
 from services.brain_service import BrainService
 from core.config import SVG_CONTENT_RAW
-
+from services.image_service import ImageGenerationService
+from utils.core import safe_escape, format_banner_text
+from utils.image_utils import img_to_base64, get_image_as_base64
 
 brain_service = BrainService()
-pollinations_service = PollinationsService()
+image_service = ImageGenerationService()
 logger = logging.getLogger("BannerService")
 
-
 async def generate_banner(ad_data):
+    start_time = time.time()
     try:
-        # =========================
-        # 1. 🧠 AI CONCEPT (GIỮ OBJECT, KHÔNG .model_dump())
-        # =========================
+        logger.info("🚀 START BANNER GENERATION")
+
+        # 1. 🧠 AI CONCEPT
         creative = await brain_service.analyze_and_creative(ad_data)
+        
+        # Kiểm tra fields bắt buộc
+        required = ["image_prompt", "main_title", "sub_title", "highlight_text", "cta_text"]
+        for field in required:
+            if field not in creative: raise ValueError(f"Missing field: {field}")
 
-        # Validate basic (tránh crash ngầm)
-        required_fields = [
-            "image_prompt",
-            "main_title",
-            "sub_title",
-            "highlight_text",
-            "cta_text",
-            "accent_color"
-        ]
+        # 2. 🎨 IMAGE GENERATION (FLUX)
+        image_bytes = await image_service.generate_flux_image(creative["image_prompt"])
+        bg_base64 = img_to_base64(image_bytes)
+        
+        # 3. 🛠️ LOGO & BRAND IDENTITY
+        logo_base64 = await get_image_as_base64(ad_data.brand_identity.get("logo", ""))
+        brand = ad_data.brand_identity
 
-        for field in required_fields:
-            if field not in creative:
-                raise ValueError(f"Missing field from BrainService: {field}")
-
-        # =========================
-        # 2. 🎨 GENERATE IMAGE
-        # =========================
-        try:
-            image_bytes = await pollinations_service.generate_image(
-                creative["image_prompt"]
-            )
-        except Exception as e:
-            logger.error(f"Image generation failed: {str(e)}")
-            image_bytes = None
-
-        # fallback image (tránh crash)
-        if image_bytes:
-            base64_img = f"data:image/png;base64,{base64.b64encode(image_bytes).decode()}"
-        else:
-            base64_img = ""  # SVG sẽ fallback background
-
-        # =========================
-        # 3. 🧩 RENDER SVG
-        # =========================
+        # 4. 🧩 SVG PREPARATION
+        brand = ad_data.brand_identity
         svg_data = {
-            "image_url": base64_img,
-            "brand_name": ad_data.brand_name,
-            "main_title": creative["main_title"],
-            "sub_title": creative["sub_title"],
-            "highlight_text": creative["highlight_text"],
-            "cta_text": creative["cta_text"],
-            "accent_color": creative["accent_color"]
+            "image_url": bg_base64,
+            "logo_url": logo_base64,
+            "brand_name": safe_escape(brand.get("name", "CoinStrat")),
+            "accent_color": brand.get("color", "#07d76e"),
+            "main_title": format_banner_text(creative["main_title"]),
+            "highlight_text": format_banner_text(creative["highlight_text"]),
+            "sub_title": safe_escape(creative["sub_title"]),
+            "cta_text": safe_escape(creative["cta_text"]),
+            "badge_text": format_banner_text(creative.get("badge_text", "ANNOUNCEMENT")),
+            "stats_value": safe_escape(creative.get("stats_value", "+210.00% APY"))
         }
 
+        # 5. 🖼️ RENDER SVG -> PNG
         svg_rendered = render_svg(SVG_CONTENT_RAW, svg_data)
-
-        # =========================
-        # 4. 🖼️ EXPORT PNG
-        # =========================
+        
         png_bytes = cairosvg.svg2png(
             bytestring=svg_rendered.encode("utf-8"),
             output_width=1376,
             output_height=768
         )
 
+        logger.info(f"🎉 SUCCESS | Duration: {time.time() - start_time:.2f}s")
         return png_bytes
 
     except Exception as e:
-        logger.error(f"🔥 Banner Generation Failed: {str(e)}")
-        return _fallback_banner(ad_data)
+        logger.exception("🔥 BANNER GENERATION FAILED")
+        return await _fallback_banner(ad_data)
 
-
-# =========================
-# 🧯 FALLBACK (CỰC QUAN TRỌNG)
-# =========================
-def _fallback_banner(ad_data):
+async def _fallback_banner(ad_data):
+    """Tạo banner mặc định khi toàn bộ quy trình AI/Render gặp sự cố."""
     try:
+        logger.warning("⚠️ USING FALLBACK BANNER")
+        brand = ad_data.brand_identity
+        
+        # Vẫn cố gắng lấy logo cho fallback nếu có thể
+        logo_url = await get_image_as_base64(brand.get("logo", ""))
+
         svg_data = {
             "image_url": "",
-            "brand_name": ad_data.brand_name,
-            "main_title": "Luxury Experience",
-            "sub_title": ad_data.product_info.name,
-            "highlight_text": "ƯU ĐÃI ĐẶC BIỆT",
-            "cta_text": "Xem ngay",
-            "accent_color": ad_data.preferred_color or "#D4AF37"
+            "logo_url": logo_url,
+            "brand_name": safe_escape(brand.get("name", "CoinStrat")),
+            "main_title": "PREMIUM SOLUTION",
+            "sub_title": "Tối ưu hóa tài sản số của bạn",
+            "highlight_text": "JOIN US NOW",
+            "cta_text": "Bắt đầu ngay",
+            "accent_color": brand.get("color", "#07d76e"),
+            "badge_text": "OFFER",
+            "stats_value": "+100% Secure"
         }
-
+        
         svg_rendered = render_svg(SVG_CONTENT_RAW, svg_data)
-
-        return cairosvg.svg2png(
-            bytestring=svg_rendered.encode("utf-8"),
-            output_width=1376,
-            output_height=768
-        )
-    except Exception as e:
-        logger.error(f"Fallback failed: {str(e)}")
-        return b""
+        return cairosvg.svg2png(bytestring=svg_rendered.encode("utf-8"))
+    except:
+        return b"" # Trả về rỗng nếu cả fallback cũng chết

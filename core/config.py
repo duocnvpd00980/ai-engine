@@ -5,7 +5,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = BASE_DIR / "templates"
-SVG_TEMPLATE_PATH = str(TEMPLATE_DIR / "ads_template.svg")
+SVG_TEMPLATE_PATH = str(TEMPLATE_DIR / "gemini-svg.svg")
 
 # Đọc sẵn nội dung SVG để dùng toàn cục
 SVG_CONTENT_RAW = ""
@@ -19,7 +19,7 @@ else:
 # 3. Định nghĩa Dictionary TEMPLATE_CONFIG (Để fix lỗi NameError)
 TEMPLATE_CONFIG = {
     "WORKFLOW_PATH": str(TEMPLATE_DIR / "workflow_api.json"),
-    "SVG_TEMPLATE_PATH": str(TEMPLATE_DIR / "ads_template.svg"),
+    "SVG_TEMPLATE_PATH": str(TEMPLATE_DIR / "gemini-svg.svg"),
 }
 
 # 4. Định nghĩa các biến lẻ (Để các file khác import kiểu gì cũng chạy)
@@ -27,6 +27,7 @@ WORKFLOW_PATH = TEMPLATE_CONFIG["WORKFLOW_PATH"]
 SVG_TEMPLATE_PATH = TEMPLATE_CONFIG["SVG_TEMPLATE_PATH"]
 # Bổ sung vào cuối file core/config.py
 GEMINI_API_KEY = "AQ.Ab8RN6JOsbKXG9mXJTmFEgA8_Wa5ReqUhvMII6jkNWLEWHHymA" # Thay bằng key của bạn
+VERCEL_API_KEY = "vck_5UacjhI2NMS7o48iTNA19ghsJnvfTygfnLpVKbDpUa6siWIoFd1iq5jP"
 
 
 # Kiểm tra file ngay khi khởi động

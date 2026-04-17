@@ -1,57 +1,73 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Dict, Any, Optional
 
-class UserProfile(BaseModel):
-    name: str = Field(..., example="Nguyễn Văn Được")
-    gender: str = Field(default="male", example="male")
-    interests: List[str] = Field(default=[], example=["Nghỉ dưỡng", "Kiến trúc", "Golf"])
-    membership: str = Field(default="Standard", example="Diamond")
-
-class ProductInfo(BaseModel):
-    name: str = Field(..., example="The Ocean Villas")
-    features: str = Field(..., example="Biệt thự hướng biển, hồ bơi riêng, dịch vụ quản gia 24/7")
-    price: Optional[str] = Field(None, example="Từ 15.000.000đ/đêm")
 
 class AdRequest(BaseModel):
-    brand_name: str = Field(default="SUNSET RESORT", example="MARINA BAY SIDE")
-    user_profile: UserProfile
-    product_info: ProductInfo
-    
-    # Màu sắc bám theo yêu cầu User
-    preferred_color: Optional[str] = Field(
-        None, 
-        description="Mã màu Hex người dùng muốn (ví dụ: #008080 cho màu xanh mòng két)",
-        example="#008080" 
+    # 1. Ý tưởng campaign
+    request_text: str = Field(..., description="User campaign idea")
+
+    # 2. Sản phẩm / dịch vụ
+    service_info: Dict[str, Any] = Field(...)
+
+    # 3. BRAND (bắt buộc giữ identity)
+    brand_identity: Dict[str, Any] = Field(...)
+
+    # 4. MARKETING TARGET (mở rộng)
+    marketing_context: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Audience, goal, emotion"
     )
-    style_tone: str = Field(
-        default="Elegant", 
-        description="Phong cách: Minimalist, Bold, Elegant, hoặc Vintage",
-        example="Elegant"
+
+    # 5. VISUAL CONTROL (mở rộng cho Flux)
+    visual_control: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="layout, lighting, composition"
     )
-    
-    request_text: Optional[str] = Field(
-        None, 
-        example="Tạo banner quảng cáo biệt thự nghỉ dưỡng, màu sắc sang trọng, bám theo tông xanh của biển"
+
+    # 6. OUTPUT CONTROL (tuỳ chọn nâng cao)
+    output_control: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="format, size, ratio, platform"
     )
 
     model_config = {
         "json_schema_extra": {
             "example": {
-                "brand_name": "MARINA BAY SIDE",
-                "user_profile": {
-                    "name": "Anh Được",
-                    "gender": "male",
-                    "interests": ["Đầu tư", "Du lịch hạng sang"],
-                    "membership": "Diamond"
+                "brand_identity": {
+                    "name": "CoinStrat",
+                    "color": "#07d76e",
+                    "logo": "https://www.coinstrat.com/logo.png",
+                    "style": "modern fintech, crypto, high-tech financial platform"
                 },
-                "product_info": {
-                    "name": "Panorama Suite",
-                    "features": "View toàn cảnh vịnh Đà Nẵng, nội thất nhập khẩu Ý",
-                    "price": "Giá ưu đãi hội viên"
+                "marketing_context": {
+                    "industry": "crypto finance / digital asset platform",
+                    "emotion": "trust, growth, financial freedom, opportunity",
+                    "goal": "user acquisition / sign-up / deposit",
+                    "target": "crypto investors, traders, passive income seekers"
                 },
-                "preferred_color": "#008080", # Màu xanh Teal sang trọng
-                "style_tone": "Elegant",
-                "request_text": "Tạo banner giới thiệu căn hộ cao cấp, phong cách thượng lưu, tông màu xanh biển chủ đạo"
-            }
+                "output_control": {
+                    "platform": "facebook ads / google display",
+                    "ratio": "16:9",
+                    "format": "high conversion banner"
+                },
+                "request_text": "Tạo banner quảng cáo nền tảng tài chính crypto giúp người dùng đầu tư, vay và kiếm lợi nhuận từ tài sản số",
+                "service_info": {
+                    "name": "CoinStrat Platform",
+                    "features": "crypto exchange, earn interest, borrowing, copy trading, dual investment, AI auto investing",
+                    "core_value": "tối ưu lợi nhuận từ tài sản crypto với rủi ro thấp hơn ngân hàng truyền thống",
+                    "pricing_model": "free signup + earn from yield products"
+                },
+                "visual_control": {
+                    "layout": "dashboard UI + abstract financial network",
+                    "lighting": "neon blue cyber glow, futuristic lighting",
+                    "mood": "high-tech, trustworthy, global finance network",
+                    "visual_elements": [
+                    "crypto charts",
+                    "network nodes",
+                    "digital assets flow",
+                    "mobile trading UI"
+                    ]
+                }
+                }
         }
     }
